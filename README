@@ -1,0 +1,75 @@
+Welcome to the TBAC packages directory
+--------------------------------------
+
+	TBAC is a RSBAC REG policy about timed based access control.
+
+
+Installation
+============
+
+	Compilation require rsbac kernel header, so rsbac-admin tools must
+	have been installed.
+
+	$ make
+	$ make build
+	$ sudo make install
+
+
+Usage
+=====
+
+	Right now, tbac only support file's attributes on a single device,
+	and you must set this parameter during module loading.
+	You need minor and major number of selected device. [1]
+
+	You should read the SPECS file to understand how it works.
+
+	First load the tbac module:
+		$ sudo modprobe tbac_minor_device=8 tbac_major_device=3
+
+	Then You can check everything goes right by looking at
+	/proc/rsbac-info/tbac
+
+	The best way to play with it is to use the rsbac_tbac_menu.py.
+	However commandline tools are also provided: 
+		tbac_[gs]et_conf to set working hours // a oneshot holiday 
+		tbac_[gs]et_attr_fd to set fd's attributes
+
+
+Known CAVEATS
+=============
+
+	TBAC being a REG module, it does not benefits from common RSBAC attributes
+	workflow, meaning no:
+		* transactions
+		* attributes inheritance (every files must be tagged)
+
+	Supporting every mounted devices could be done without much that work.
+
+
+Directores layouts
+==================
+
+	This package contains:
+
+	main:
+	  |- src:	the reg module sources
+	  |- headers:	the tbac include files
+	  |- libs:	userland library and it's python binding
+	  \- tools:	administration commands and a fancy Tk menu in python
+
+
+
+[1] To get filesystem under device minor/major you can use 'stat':
+
+$ stat --printf="%D\n" /home 
+808
+
+/home device's minor is 08, major is 8
+
+[1] or you can look at the mounted devices in dev with 'ls':
+
+$ ls -l /dev/sda8
+brw-rw---- 1 root disk 8, 8 2009-10-15 18:35 /dev/sda8
+                       ^  ^
+		       \---\--- those number are major and minor

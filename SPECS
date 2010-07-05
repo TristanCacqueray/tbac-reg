@@ -1,0 +1,182 @@
+## File Name            : SPECS
+## Project              : TBAC
+## Licence		: Creative Commons - Attribution-Noncommmercial 2.5
+## Licence-url		: http://creativecommons.org/licenses/by-nc/2.5
+## Last modified        : 11/Jun/2009
+#
+
+Timed Based Access Control
+==========================
+
+	The main purpose of this security model is to illustrate the usage
+of the RSBAC[1] Linux framework.
+
+	This module provides access control based on time information.
+
+	The goal is to formalize legal working hour, and let the "time officer"
+grant access to file system objects only during working hours.
+	(ie: accountability file for a corporation)
+
+
+Definitions
+===========
+
+	"Time officer" means a subject.
+
+	"Working hours" means a time period in whitch access should be granted.
+
+	"Spare time" means the oposite of Working hours.
+
+	"THE_EPOCH" means the date 1970-01-01 00:00:00 UTC
+
+
+TBAC FD Attributes
+==================
+
+	Every time variable below is UNIX time (seconds since THE_EPOCH).
+	Every hour variable below is in the range [0: 24*3600] (seconds).
+
+	tbac_flags:	bit field;
+		bit 0 :   TBAC control if set.
+		bit 1 :	  automatic control if set, custom if not set.
+		bit 2 :	  (if automatic) : working hours if set,
+			                   spare time if not set.
+			  (if custom) :    access granted between tbac_min and
+			  		   tbac_max if set,
+					   access granted since tbac_min if not
+					   set.
+		remainder reserved for future use.
+	
+	tbac_range:	struct;
+		min :	a time;
+		max :	a time;
+
+
+	Examples of flags for tbac_flags:
+	"UNSET"		: [0, 0, 0]	= 0x0
+		No decision
+	"WORKINGHOURS"	: [1, 1, 1]	= 0x7
+		Access granted if current time match a working hour
+	"SPAREHOUR"	: [1, 1, 0]	= 0x6
+		Access granted if current time does not match a working hour
+	"RANGE"		: [1, 0, 1]	= 0x5
+		Access granted if current time is in [tbac_min, tbac_max]
+	"SINCE"		: [1, 0, 0]	= 0x4
+		Access granted if current time is superior than tbac_min
+
+
+TBAC Syscall
+============
+
+	tbac_set_oneshot_holiday(time);
+	tbac_set_working_hours(morning_hour, evening_hour);
+
+	All those syscalls only store statically the parameter, they will be
+	used later for decision making.
+
+	Time will be converted in the first second of the date.
+		(ie:  1244734957 will be converted in 11/Jun/2009)
+
+
+TBAC default values
+===================
+
+	A time set to 0 is irrelevant because Januray 1st 1970 has elapsed some
+	time ago already. Hence it is reused to mean no time is set.
+
+	Default working hour is 8:30 - 19:00.
+
+
+TBAC Internal Static Attributes
+===============================
+
+	oneshot_holiday:	the first second of the next holiday.
+	morning_hour:		the first second of a working day.
+	evening_hour:		the last second of a working day.
+
+
+Initial Configuration
+=====================
+
+	By default, Files and directory (FD) have tbac_flags set to 0 (no tbac).
+
+	Secoff is the only user able to use the tbac related syscalls.
+
+
+Working Hour Calculation
+========================
+
+	First a check is done on the hour.
+		If access time is < morning_hour or > evening_hour then this
+		is not a working hour.
+
+	Then a check on the day is done.
+		If day isn't between [Monday:Friday], then this is not a
+		working hour.
+
+	Finally holiday are found this way:
+		holiday must be set manually by the admin with the
+			tbac_set_oneshot_holiday syscall before the day D.
+
+
+Food For Though
+===============
+
+	* Localization is not assumed, ie local working hours setting require 
+	correct userland time translation. REG module only speak UTC.
+
+	* tbac_flags could have more meaning:
+		* cron like events,
+		* ical formats.
+
+	* TBAC could be used to enforce inode time information modification.
+
+	* Define a time officer role.
+
+	* Working hour definition could be enhanced in many ways:
+		* Import an official source of information
+		and try to optimize lookup in this database.
+		* tbac_set_working_hours per day
+		* Dynamics holidays.
+
+	* Allow the admin to set-up his own working hour definition
+		(ie: set the last 2 week end of the year as working days).
+
+
+Usage examples
+==============
+
+	* first admin does:
+	tbac_set_working_hours(9 * 3600, 18 * 3600);
+	tbac_set_oneshot_holiday(1272711642);
+
+	* a lecture:
+		tbac_flags = [ 1, 0, 1 ]
+		tbac_min set to the lecture date.
+
+	* a marketing event:
+		tbac_flags = [ 1, 0, 0 ]
+		tbac_min and tbac_max for the sale period.
+
+	* a game binary:
+		tbac_flags = [ 1, 1, 0 ]
+
+	* Stock Market flows:
+		tbac_flags = [ 1, 1, 1 ]
+		tbac_set_working_hours(market opening, market ending);
+
+
+Caveats
+=======
+
+	TBAC being a REG, it does not include:
+
+		* transaction
+		* attribute inheritance
+
+
+References
+==========
+
+[1]:    http://www.rsbac.org Ruled Set Based Access Control
+		Extending Linux Security Beyond the Limits

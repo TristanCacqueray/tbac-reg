@@ -70,9 +70,8 @@ inline int
 #endif
 			return GRANTED;
 		case TBAC_sparehours:
-			if (CHECK_MORNING(hour)) 
 			if (IN_SPARE_TIME(day, hour, ts.tv_sec))
-			    return GRANTED;
+				return GRANTED;
 			rsbac_pr_debug(reg, "Access to sparehours ressource during workinghours, day %d (not weekend), hours %ld (day time), time %ld (not holiday) -> NOT_GRANTED!\n",
 				day, hour, ts.tv_sec);
 			return NOT_GRANTED;

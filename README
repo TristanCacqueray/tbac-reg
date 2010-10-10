@@ -1,75 +1,86 @@
 Welcome to the TBAC packages directory
 --------------------------------------
 
-	TBAC is a RSBAC REG policy about timed based access control.
+TBAC is a RSBAC REG policy about timed based access control.
+This project is in developpement.
+
+Currently available:
+
+* REG module active for one device
+* Tkinter administration interface
 
 
 Installation
-============
+------------
 
-	Compilation require rsbac kernel header, so rsbac-admin tools must
-	have been installed.
+Compilation require rsbac kernel header, so rsbac-admin tools must
+have been installed.
 
-	$ make
-	$ make build
-	$ sudo make install
+$ make
+$ make build
+$ sudo make install
+
+Make sure environment contain:
+
+* */usr/local/lib* is in LD_LIBRARY_PATH or in /etc/ld.so.conf / ldconfig
+* */usr/local/lib/python2.6/site-packages* in PYTHONPATH
 
 
 Usage
-=====
+-----
 
-	Right now, tbac only support file's attributes on a single device,
-	and you must set this parameter during module loading.
-	You need minor and major number of selected device. [1]
+Right now, tbac only support file's attributes on a single device,
+and you must set this parameter during module loading.
+You need minor and major number of selected device. [1]
 
-	You should read the SPECS file to understand how it works.
+You should read the SPECS file to understand how it works.
 
-	First load the tbac module:
-		$ sudo modprobe tbac_minor_device=8 tbac_major_device=3
+First load the tbac module:
+	$ sudo modprobe tbac tbac_root_device_major=X tbac_root_device_minor=Y
 
-	Then You can check everything goes right by looking at
+Then You can check everything goes right by looking at
 	/proc/rsbac-info/tbac
 
-	The best way to play with it is to use the rsbac_tbac_menu.py.
-	However commandline tools are also provided: 
-		tbac_[gs]et_conf to set working hours // a oneshot holiday 
-		tbac_[gs]et_attr_fd to set fd's attributes
+The best way to play with it is to use the rsbac_tbac_menu.py.
+However commandline tools are also provided:
+	tbac_[gs]et_conf to set working hours // a oneshot holiday
+	tbac_[gs]et_attr_fd to set fd's attributes
 
 
 Known CAVEATS
-=============
+-------------
 
-	TBAC being a REG module, it does not benefits from common RSBAC attributes
-	workflow, meaning no:
-		* transactions
-		* attributes inheritance (every files must be tagged)
+TBAC being a REG module, it does not benefits from common RSBAC attributes
+workflow, meaning:
+	* no transactions
+	* no attributes inheritance (every files must be tagged)
 
-	Supporting every mounted devices could be done without much that work.
+Supporting every mounted devices could be done without much that work.
 
 
 Directores layouts
-==================
+------------------
 
-	This package contains:
+This package contains:
 
-	main:
-	  |- src:	the reg module sources
-	  |- headers:	the tbac include files
-	  |- libs:	userland library and it's python binding
-	  \- tools:	administration commands and a fancy Tk menu in python
+main:
+|->/src:                the reg module sources
+|->/headers:            the tbac include files
+|->/libs:               userland library and its python binding
+\->/tools:              administration commands and a fancy Tk menu in python
 
 
 
 [1] To get filesystem under device minor/major you can use 'stat':
 
 $ stat --printf="%D\n" /home 
-808
+805
 
-/home device's minor is 08, major is 8
+/home device's major is 08, minor ir 05
 
 [1] or you can look at the mounted devices in dev with 'ls':
 
 $ ls -l /dev/sda8
-brw-rw---- 1 root disk 8, 8 2009-10-15 18:35 /dev/sda8
+brw-rw---- 1 root disk 8, 5 2009-10-15 18:35 /dev/sda5
                        ^  ^
-		       \---\--- those number are major and minor
+                       \---\--- those number are major and minor
